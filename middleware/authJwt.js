@@ -7,17 +7,17 @@ verifyToken = (req, res, next) => {
     return res.status(403).send({ message: "No token provided!" });
   }
 
-  jwt.verify(token,process.env.JWT_KEY, (err, decoded) => {
+  jwt.verify(token,process.env.JWT_KEY, (err, user) => {
+    
     if (err) {
       return res.status(401).send({ message: "Unauthorized!" });
     }
-    req.userId = decoded.id;
-    next();
+      req.user = user._id;
+     next();
   });
 };
 
 const authJwt = {
   verifyToken
-  
 };
 module.exports = authJwt;

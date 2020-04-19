@@ -1,6 +1,7 @@
 const User = require('../models/user.model');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const Demande = require('../models/demande.model') ;
+
 // Create and Save a new user
 exports.create =  (req, res) => {
     //password_h = bcrypt.hash(req.body.password, 8);
@@ -39,8 +40,7 @@ exports.create =  (req, res) => {
 // login user
 exports.login =  (req, res) => {
       const email =req.body.email;
-     // const password = req.body.password;
-  // chek the  user name
+      // chek the  user name
   User.findOne({ email })
     .then(user => {
       if (!user) {
@@ -60,6 +60,135 @@ exports.login =  (req, res) => {
             })
        
 }
+//authentification user
 exports.auth = (req,res,next) =>{   
         return res.status(200).send({message:" validation"});
+}
+// profile
+exports.profile = (req , res ) => {
+    User.findById(req.user)
+    .exec()
+    .then( data => {
+        if (!data) {
+            res.status(404).send({message:"user not found "})
+        }
+       res.status(200).send(data);
+       })
+        .catch(err =>{
+        res.send({message:"err user"})
+    });
+
+}
+
+// add a new demande
+exports.addDemande = (req , res ,next )=> {
+  
+    const demande = new Demande({
+        title : req.body.title,
+        description: req.body.description,
+        adresse :req.body.adresse,
+        phone: req.body.phone,
+        status: req.body.status,
+       
+    });
+      demande.save().then(newDemande => {
+        if(!newDemande){
+            res.status(404).send({message :"errr"});
+        }
+            newDemande.publisher= req.user;
+            newDemande.save().then(data =>{
+                if(!data){
+                    res.send({message:"cann't not save publisher"})
+                }
+                res.send({message:" publisher saved "})
+            }).catch(err =>{
+                console.log(err);
+                
+            })
+
+           res.status(200).send({message:"new Demande has been posted " });
+    }).catch(err => {
+        res.send(err.message);
+    });
+}
+// get all demande
+exports.getAllDemande= (req, res )=>{
+    Demande.find()
+    .exec()
+    .then(allDemande =>{
+        res.status(200).send(allDemande);
+    })
+    .catch(err => {
+        res.status(500).send({message:'Error'});
+    });
+}
+// filtrage demande 
+exports.getDemandeByAdresse = (req  , res )=> {
+        User.findById(req.user)
+        .exec()
+        .then( data => {
+            if (!data) {
+                res.status(404).send({message:"user not found "})
+            }
+            Demande.find({adresse:{$in :data.adresse}}).exec().then(
+                result =>{
+                    if(!result){
+                        res.status(404).send({message:" Demande is not found with thid adresse "});
+                    }
+                    res.status(200).send(result);
+                }).catch(err =>{
+                    res.send({message:"err demande"});
+                })
+        })
+        .catch(err =>{
+            res.send({message:"err user"})
+        });
+
+}
+// delete a demande 
+exports.delteDemande= (req,res)=>{
+   const id = req.params.id;
+    Demande.findByIdAndRemove({_id:id})
+    .exec()
+    .then(result =>{
+    res.status(200).send({message:" Demande has been deleted with successful "})    
+    })
+    .catch(err =>{
+        res.status(404).send(err);
+    });
+}
+// Details Demande 
+exports.getDetailDemande = (req,res)=>{
+   const id = req.params.id;  
+   Demande.findById({_id: id})
+    .exec()
+    .then(result =>{
+         res.status(200).send(result);           
+       })
+    .catch(err =>{
+         res.status(404).send(err);
+    });
+}
+// get demande of current user
+exports.getMYDemande= (req , res )=>{
+    User.findById(req.user)
+    .exec()
+    .then( data => {
+        if (!data) {
+            res.status(404).send({message:"user not found "})
+        }
+        Demande.find({ publisher:{$in :data.id}}).exec().then(
+            result =>{
+                if(!result){
+                    res.status(404).send({message:" user doesn't  have demande "});
+                }
+                res.status(200).send(result);
+            }).catch(err =>{
+                res.send({message:"erreur fetching  demande"});
+            })
+    })
+    .catch(err =>{
+        res.send({message:"erreur user"})
+    });
+
 }
