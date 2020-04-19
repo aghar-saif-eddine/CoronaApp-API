@@ -79,7 +79,6 @@ exports.profile = (req , res ) => {
     });
 
 }
-
 // add a new demande
 exports.addDemande = (req , res ,next )=> {
   
@@ -130,7 +129,7 @@ exports.getDemandeByAdresse = (req  , res )=> {
             if (!data) {
                 res.status(404).send({message:"user not found "})
             }
-            Demande.find({adresse:{$in :data.adresse}}).exec().then(
+            Demande.find({adresse:{$in :data.adresse}},{status:{$in:"open"}}).exec().then(
                 result =>{
                     if(!result){
                         res.status(404).send({message:" Demande is not found with thid adresse "});
@@ -191,4 +190,64 @@ exports.getMYDemande= (req , res )=>{
         res.send({message:"erreur user"})
     });
 
+}
+exports.serveDemande =(req, res) =>{
+    Demande.findById(req.params.id)
+    .then(Data =>{
+        if (!Data) {
+            res.status(404).send({message:"Id Demande not found "});
+        }
+        Demande.findByIdAndUpdate(Data._id,{status: "wait", acceptateur: req.user})
+        .then(result => {
+            if (!result) {
+                res.status(404).send({message:" can not be updated "});
+            }
+            res.status(200).send(result);
+        }).catch(err =>{
+            res.status(201).send(err);
+        });
+    })
+    .catch(err =>{
+        res.status(201).send(err);
+    });
+}
+exports.recevedDemande =(req , res) =>{
+   Demande.findById(req.params.id,{publisher:req.user})
+   .then(Data => {
+       if (!Data) {
+           res.status(404).send({message:"cann not be found with this id demande or id publisher "})
+       }
+       Demande.findByIdAndUpdate(Data._id,{status: "close"})
+       .then( UpdatData =>{
+           if (!UpdatData) {
+               res.status(201).send({message:"cann not be update this demande"})
+           }
+           res.status(200).send({message:"Your demande status has been changed"});
+       }).catch(err =>{
+           res.status(404).send(err);
+       });
+   }).catch(err => {
+       res.status(404).send(err);
+   });
+
+}
+exports.cancelDemande = (req , res) =>{
+    Demande.findById(req.params.id,{publisher:req.user})
+    .then(Data => {
+        if (!Data) {
+            res.status(404).send({message:"cann not be found with this id demande or id publisher "})
+        }
+        Demande.findByIdAndRemove(Data._id)
+        .then( UpdatData =>{
+            if (!UpdatData) {
+                res.status(201).send({message:"cann not be delete this demande"})
+            }
+            res.status(200).send({message:"Your demande status has been deleted"});
+        }).catch(err =>{
+            res.status(404).send(err);
+        });
+    }).catch(err => {
+        res.status(404).send(err);
+    });
+  
 }

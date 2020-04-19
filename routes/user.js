@@ -34,7 +34,15 @@
    
    //  get deatail demande (id demande) 
    router.get('/api/getDetailDemande/:id' ,[authJwt.verifyToken],demande.getDetailDemande)
-
+   
+   // wait demande 
+   router.post('/api/serveDemande/:id' ,[authJwt.verifyToken],demande.serveDemande)
+ 
+   // close demande
+   router.post('/api/recevedDemande/:id',[authJwt.verifyToken],demande.recevedDemande)
+  
+   // cancel demande
+   router.delete('/api/cancelDemande/:id' ,[authJwt.verifyToken],demande.cancelDemande )
 
     module.exports = router;
 
